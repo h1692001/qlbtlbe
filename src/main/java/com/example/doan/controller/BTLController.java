@@ -47,7 +47,7 @@ public class BTLController {
                 ObjectUtils.asMap("public_id", publicId,"resource_type", "raw"));
         user.forEach(userEntity -> {
             ClassVUser classVUser=classVUserRepository.findByUserAndClassV(userEntity,classV1.get());
-            classVUser.setSubmit(true);
+            classVUser.setSubmit(1);
             classVUserRepository.save(classVUser);
         });
         String fileUrl = (String) uploadResult.get("url");
@@ -101,4 +101,5 @@ public class BTLController {
         btlRepository.save(btl.get());
         return ResponseEntity.ok("Success");
     }
+
 }

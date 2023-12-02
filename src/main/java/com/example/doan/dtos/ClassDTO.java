@@ -17,4 +17,5 @@ public class ClassDTO {
     private Long majorId;
     private String role;
     private GetUserResponse member;
+    private int isSubmit;
 }

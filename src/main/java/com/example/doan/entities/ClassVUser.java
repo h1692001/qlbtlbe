@@ -15,7 +15,7 @@ public class ClassVUser {
     @Column(name = "id", nullable = false)
     private Long id;
     private String role;
-    private boolean isSubmit;
+    private int submit;
 
     @ManyToOne
     private UserEntity user;

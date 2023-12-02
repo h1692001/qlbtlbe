@@ -161,4 +161,22 @@ public class ClassVController {
         return ResponseEntity.ok("Success");
     }
 
+    @GetMapping("/checknopbai")
+    private ResponseEntity<?> checknopbai(@RequestParam Long classId){
+        Optional<ClassV> classV=classVRepository.findById(classId);
+        List<ClassVUser> classVUsers=classVUserRepository.findAllByClassV(classV.get());
+        return ResponseEntity.ok(classVUsers.stream().map(classVUser -> {
+            return ClassDTO.builder()
+                    .member(GetUserResponse.builder()
+                            .id(classVUser.getUser().getId())
+                            .userId(classVUser.getUser().getUserId())
+                            .fullname(classVUser.getUser().getFullname())
+                            .email(classVUser.getUser().getEmail())
+                            .build())
+                    .role(classVUser.getRole())
+                    .isSubmit(classVUser.getSubmit())
+                    .build();
+        }).collect(Collectors.toList()));
+
+    }
 }
