@@ -85,6 +85,18 @@
             <artifactId>json</artifactId>
             <version>20230618</version>
         </dependency>
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.33.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.cloudinary/cloudinary-core -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-core</artifactId>
+            <version>1.33.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -100,11 +112,12 @@
                         <exclude>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                        </exclude>
+                        </exclude>  
                     </excludes>
                 </configuration>
             </plugin>
         </plugins>
+
     </build>
 
 </project>

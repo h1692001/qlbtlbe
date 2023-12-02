@@ -38,6 +38,9 @@ public class UserEntity  implements UserDetails {
     @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     private Faculties faculty;
 
+    @ManyToOne
+    private BTL btl;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 

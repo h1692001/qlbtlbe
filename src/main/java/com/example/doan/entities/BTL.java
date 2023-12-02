@@ -1,18 +1,17 @@
 package com.example.doan.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class BTL {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,11 +20,11 @@ public class BTL {
 
     private String path;
 
-    private String content;
     private String status;
+    private String name;
 
-    @OneToOne
-    private UserEntity publisher;
+    @OneToMany(mappedBy = "btl",cascade = {CascadeType.MERGE,CascadeType.PERSIST})
+    private List<UserEntity> publisher;
 
     private Date createdAt;
 

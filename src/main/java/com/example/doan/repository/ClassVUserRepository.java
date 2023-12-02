@@ -17,4 +17,6 @@ public interface ClassVUserRepository extends JpaRepository<ClassVUser,Long> {
     ClassVUser findByUserAndClassV(UserEntity userEntity, ClassV classV);
 
     List<ClassVUser> findAllByUser(UserEntity userEntity);
+
+    List<ClassVUser> findAllByClassVAndRole(ClassV classV,String role);
 }

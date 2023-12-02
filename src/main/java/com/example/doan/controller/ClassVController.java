@@ -1,5 +1,7 @@
 package com.example.doan.controller;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.doan.dtos.ClassDTO;
 import com.example.doan.dtos.GetUserResponse;
 import com.example.doan.dtos.MajorDto;
@@ -13,11 +15,19 @@ import com.example.doan.repository.ClassVUserRepository;
 import com.example.doan.repository.MajorRepository;
 import com.example.doan.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +42,10 @@ public class ClassVController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private Cloudinary cloudinary;
+
 
     @Autowired
     private ClassVUserRepository classVUserRepository;
@@ -50,24 +64,42 @@ public class ClassVController {
                     .build();
         }).collect(Collectors.toList()));
     }
+
     @GetMapping("/getClassByUser")
     private ResponseEntity<?> getClassByUser(@RequestParam Long userId) {
-        Optional<UserEntity> user=userRepository.findById(userId);
+        Optional<UserEntity> user = userRepository.findById(userId);
 
         List<ClassVUser> classVList = classVUserRepository.findAllByUser(user.get());
         return ResponseEntity.ok(classVList.stream().map(classV -> {
             return ClassDTO.builder()
-                    .id(classV.getId())
+                    .id(classV.getClassV().getId())
                     .createdAt(classV.getClassV().getCreatedAt())
                     .name(classV.getClassV().getClassName())
-
                     .build();
         }).collect(Collectors.toList()));
     }
+
     @GetMapping("/getMembers")
     private ResponseEntity<?> getMembers(@RequestParam Long classId) {
         Optional<ClassV> classVList = classVRepository.findById(classId);
-        List<ClassVUser> classVUsers=classVUserRepository.findAllByClassV(classVList.get());
+        List<ClassVUser> classVUsers = classVUserRepository.findAllByClassV(classVList.get());
+        return ResponseEntity.ok(classVUsers.stream().map(classVUser -> {
+            return ClassDTO.builder()
+                    .member(GetUserResponse.builder()
+                            .id(classVUser.getUser().getId())
+                            .userId(classVUser.getUser().getUserId())
+                            .fullname(classVUser.getUser().getFullname())
+                            .email(classVUser.getUser().getEmail())
+                            .build())
+                    .role(classVUser.getRole())
+                    .build();
+        }).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/getMembersStudent")
+    private ResponseEntity<?> getMembersStudent(@RequestParam Long classId) {
+        Optional<ClassV> classVList = classVRepository.findById(classId);
+        List<ClassVUser> classVUsers = classVUserRepository.findAllByClassVAndRole(classVList.get(),"STUDENT");
         return ResponseEntity.ok(classVUsers.stream().map(classVUser -> {
             return ClassDTO.builder()
                     .member(GetUserResponse.builder()
@@ -82,35 +114,41 @@ public class ClassVController {
     }
 
     @PostMapping
-    private ResponseEntity<?> createClass(@RequestBody ClassDTO classDTO) {
-        ClassV classV=classVRepository.findByClassName(classDTO.getName());
-        if(classV!=null){
+    private ResponseEntity<?> createClass(@RequestBody ClassDTO classDTO) throws Exception {
+
+
+        ClassV classV = classVRepository.findByClassName(classDTO.getName());
+        if (classV != null) {
             throw new ApiException("Existed class");
         }
-        Optional<MajorEntity> majorEntity=majorRepository.findById(classDTO.getMajorId());
-        ClassV classV1=ClassV.builder()
+        Map result = cloudinary.api().createFolder(classDTO.getName(), ObjectUtils.emptyMap());
+        Optional<MajorEntity> majorEntity = majorRepository.findById(classDTO.getMajorId());
+        ClassV classV1 = ClassV.builder()
                 .className(classDTO.getName())
                 .createdAt(new Date())
-                .major(majorEntity.get())
+                .major(majorEntity.orElseThrow(() -> new ApiException("Major not found")))
                 .build();
         classVRepository.save(classV1);
+
         return ResponseEntity.ok("Success");
+
+
     }
 
     @PostMapping("/addMember")
-    private ResponseEntity<?> addMember (@RequestBody ClassDTO classDTO) {
-        Optional<ClassV> classV=classVRepository.findById(classDTO.getId());
-        if(classV.isEmpty()){
+    private ResponseEntity<?> addMember(@RequestBody ClassDTO classDTO) {
+        Optional<ClassV> classV = classVRepository.findById(classDTO.getId());
+        if (classV.isEmpty()) {
             throw new ApiException("Can't find class");
         }
 
-        Optional<UserEntity> user=userRepository.findById(classDTO.getMemberId());
-        ClassVUser check=classVUserRepository.findByUserAndClassV(user.get(),classV.get());
-        if(check!=null){
+        Optional<UserEntity> user = userRepository.findById(classDTO.getMemberId());
+        ClassVUser check = classVUserRepository.findByUserAndClassV(user.get(), classV.get());
+        if (check != null) {
             throw new ApiException("Existed member");
         }
 
-        ClassVUser classVUser= ClassVUser.builder()
+        ClassVUser classVUser = ClassVUser.builder()
                 .role(classDTO.getRole())
                 .user(user.get())
                 .classV(classV.get())
