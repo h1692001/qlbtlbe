@@ -48,6 +48,7 @@ public class BTLController {
         user.forEach(userEntity -> {
             ClassVUser classVUser=classVUserRepository.findByUserAndClassV(userEntity,classV1.get());
             classVUser.setSubmit(1);
+            classVUser.setSubmitedAt(new Date());
             classVUserRepository.save(classVUser);
         });
         String fileUrl = (String) uploadResult.get("url");

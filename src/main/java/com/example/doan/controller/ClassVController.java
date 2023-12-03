@@ -175,6 +175,7 @@ public class ClassVController {
                             .build())
                     .role(classVUser.getRole())
                     .isSubmit(classVUser.getSubmit())
+                    .submittedAt(classVUser.getSubmitedAt())
                     .build();
         }).collect(Collectors.toList()));
 

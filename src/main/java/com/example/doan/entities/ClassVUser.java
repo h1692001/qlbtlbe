@@ -3,6 +3,8 @@ package com.example.doan.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Date;
+
 @Entity
 @Getter
 @Setter
@@ -16,6 +18,7 @@ public class ClassVUser {
     private Long id;
     private String role;
     private int submit;
+    private Date submitedAt;
 
     @ManyToOne
     private UserEntity user;

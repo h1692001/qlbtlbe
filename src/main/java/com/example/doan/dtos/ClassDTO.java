@@ -18,4 +18,5 @@ public class ClassDTO {
     private String role;
     private GetUserResponse member;
     private int isSubmit;
+    private Date submittedAt;
 }
