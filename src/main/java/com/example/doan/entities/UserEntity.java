@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -38,8 +39,10 @@ public class UserEntity  implements UserDetails {
     @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     private Faculties faculty;
 
-    @ManyToOne
-    private BTL btl;
+    private int status;
+
+    @ManyToMany(mappedBy = "publisher")
+    private Set<BTL> btls;
 
     @Enumerated(EnumType.STRING)
     private Role role;

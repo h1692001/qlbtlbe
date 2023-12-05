@@ -21,4 +21,6 @@ public class AuthDto implements Serializable {
     private String email;
     private String encryptPassword;
     private String token;
+    private String currentPassword;
+    private int status;
 }

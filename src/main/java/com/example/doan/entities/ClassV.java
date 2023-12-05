@@ -26,6 +26,8 @@ public class ClassV {
     @OneToMany(cascade = {CascadeType.MERGE,CascadeType.PERSIST},mappedBy = "classV")
     private List<BTL> btls;
 
+    private int status;
+
     @ManyToOne
     private MajorEntity major;
 

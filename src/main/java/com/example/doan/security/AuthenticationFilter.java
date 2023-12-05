@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -46,6 +47,13 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     public Authentication attemptAuthentication(HttpServletRequest req, HttpServletResponse res) throws AuthenticationException {
         try {
             AuthLoginRequest creds = new ObjectMapper().readValue(req.getInputStream(), AuthLoginRequest.class);
+
+            UserService userService = (UserService) SpringApplicationContext.getBean("userServiceImpl");
+            AuthDto authDto = userService.getUser(creds.getEmail());
+
+            if (authDto != null && authDto.getStatus() == 1) {
+                throw new DisabledException("Account is disabled");
+            }
 
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                     creds.getEmail(),

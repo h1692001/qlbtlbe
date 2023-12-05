@@ -15,4 +15,5 @@ public class GetUserResponse {
     private Role role;
     private FacultyDTO faculty;
     private MajorDto major;
+    private int status;
 }

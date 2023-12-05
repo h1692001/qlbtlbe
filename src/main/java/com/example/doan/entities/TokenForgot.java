@@ -3,28 +3,20 @@ package com.example.doan.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Date;
+import java.time.Instant;
 
 @Entity
-@Getter
 @Setter
+@Getter
 @AllArgsConstructor
-@Builder
 @NoArgsConstructor
-public class ClassVUser {
+@Builder
+public class TokenForgot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
-    private String role;
-    private int submit;
-    private Date submitedAt;
-    private int status;
 
-    @ManyToOne
-    private UserEntity user;
-
-    @ManyToOne
-    private ClassV classV;
-
+    private String token;
+    private Instant expired;
 }

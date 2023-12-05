@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RegisterCommand {
+    private Long id;
     private String studentId;
     private String fullname;
     private String email;

@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -23,7 +24,12 @@ public class BTL {
     private String status;
     private String name;
 
-    @OneToMany(mappedBy = "btl",cascade = {CascadeType.MERGE,CascadeType.PERSIST})
+    @ManyToMany
+    @JoinTable(
+            name = "btl_publisher",
+            joinColumns = @JoinColumn(name = "btl_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
     private List<UserEntity> publisher;
 
     private Date createdAt;

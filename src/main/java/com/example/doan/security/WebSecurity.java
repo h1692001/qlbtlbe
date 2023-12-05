@@ -49,6 +49,7 @@ public class WebSecurity {
                 .requestMatchers(HttpMethod.GET, "/user/internal/getById/*").permitAll()
                 .requestMatchers(HttpMethod.POST, "/user/verifyForgotPasswordToken").permitAll()
                 .requestMatchers(HttpMethod.POST, "/user/resetPassword").permitAll()
+                .requestMatchers(HttpMethod.GET, "/user/checkForgotToken").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(getAuthenticationFilter())

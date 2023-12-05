@@ -19,4 +19,6 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
     List<UserEntity> findByRole(Role role);
 
     List<UserEntity> findByIdIn(List<Long> uploader);
+
+    List<UserEntity> findAllByRole(Role role);
 }
