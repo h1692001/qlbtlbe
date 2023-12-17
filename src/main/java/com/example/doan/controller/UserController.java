@@ -313,7 +313,7 @@ public class UserController {
     @PostMapping("/changePassword")
     private ResponseEntity<?> changePassword(@RequestBody AuthDto authDto) {
         UserEntity user = userRepository.findByEmail(authDto.getEmail());
-        if(!user.getPassword().equals(authDto.getCurrentPassword())){
+        if(!bCryptPasswordEncoder.matches(authDto.getCurrentPassword(),user.getPassword())){
             throw new ApiException(HttpStatus.BAD_REQUEST,"Current password's wrong!");
         }
         user.setPassword(bCryptPasswordEncoder.encode(authDto.getPassword()));

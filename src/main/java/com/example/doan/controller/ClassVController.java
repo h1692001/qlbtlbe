@@ -3,6 +3,7 @@ package com.example.doan.controller;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.doan.dtos.ClassDTO;
+import com.example.doan.dtos.FacultyDTO;
 import com.example.doan.dtos.GetUserResponse;
 import com.example.doan.dtos.MajorDto;
 import com.example.doan.entities.ClassV;
@@ -123,9 +124,19 @@ public class ClassVController {
             return ClassDTO.builder()
                     .member(GetUserResponse.builder()
                             .id(classVUser.getUser().getId())
+                            .role(classVUser.getUser().getRole())
                             .userId(classVUser.getUser().getUserId())
                             .fullname(classVUser.getUser().getFullname())
                             .email(classVUser.getUser().getEmail())
+                            .avatar(classVUser.getUser().getAvatar())
+                            .major(MajorDto.builder()
+                                    .id(classVUser.getUser().getMajor().getId())
+                                    .majorName(classVUser.getUser().getMajor().getName()).build())
+                            .faculty(FacultyDTO.builder()
+                                    .id(classVUser.getUser().getMajor().getFaculties().getId())
+                                    .name(classVUser.getUser().getMajor().getFaculties().getName())
+                                    .build())
+                            .status(classVUser.getUser().getStatus())
                             .build())
                     .role(classVUser.getRole())
                     .build();
