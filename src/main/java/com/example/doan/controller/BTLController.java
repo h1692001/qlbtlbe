@@ -5,6 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.doan.dtos.BTLDTO;
 import com.example.doan.dtos.ClassDTO;
 import com.example.doan.dtos.GetUserResponse;
+import com.example.doan.dtos.SubjectDTO;
 import com.example.doan.entities.*;
 import com.example.doan.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -31,24 +32,26 @@ public class BTLController {
     private final ClassVRepository classVRepository;
     private final ClassVUserRepository classVUserRepository;
     private final LogRepository logRepository;
+    private final SubjectRepository subjectRepository;
+    private final SubjectUserRepository subjectUserRepository;
 
     @PostMapping
-    private ResponseEntity<?> uploadBTL(@RequestParam MultipartFile file, @ModelAttribute("uploader") List<Long> uploader, @ModelAttribute("classV") Long classV, @ModelAttribute("name") String name) throws IOException {
-        Optional<ClassV> classV1 = classVRepository.findById(classV);
+    private ResponseEntity<?> uploadBTL(@RequestParam MultipartFile file, @ModelAttribute("uploader") List<Long> uploader, @ModelAttribute("classV") Long subject, @ModelAttribute("name") String name) throws IOException {
+        Optional<SubjectEntity> classV1 = subjectRepository.findById(subject);
         List<UserEntity> user = userRepository.findByIdIn(uploader);
-        String publicId = classV1.get().getClassName() + "/" + file.getOriginalFilename();
+        String publicId = classV1.get().getName() + "/" + file.getOriginalFilename();
 
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap("public_id", publicId, "resource_type", "raw"));
         user.forEach(userEntity -> {
-            ClassVUser classVUser = classVUserRepository.findByUserAndClassV(userEntity, classV1.get());
+            SubjectUserEntity classVUser = subjectUserRepository.findByUserAndSubject(userEntity, classV1.get());
             classVUser.setSubmit(1);
             classVUser.setSubmitedAt(new Date());
-            classVUserRepository.save(classVUser);
+            subjectUserRepository.save(classVUser);
         });
         String fileUrl = (String) uploadResult.get("url");
         BTL btl = BTL.builder()
-                .classV(classV1.get())
+                .subject(classV1.get())
                 .createdAt(new Date())
                 .publisher(user)
                 .name(name)
@@ -67,32 +70,72 @@ public class BTLController {
 
     @GetMapping
     private ResponseEntity<?> getAllByClass(@RequestParam Long classId) {
-        Optional<ClassV> classV = classVRepository.findById(classId);
-        List<BTL> btlList = btlRepository.findAllByClassV(classV.get());
+        ClassV classV=classVRepository.findById(classId).orElse(null);
+        List<SubjectEntity> subjectEntityList = subjectRepository.findAllByClassV(classV);
         List<BTLDTO> btldtos = new ArrayList<>();
-        btlList.forEach(btl -> {
-            BTLDTO btldto = BTLDTO.builder()
-                    .id(btl.getId())
-                    .status(btl.getStatus())
-                    .name(btl.getName())
-                    .path(btl.getPath())
-                    .createdAt(btl.getCreatedAt())
-                    .classDTO(ClassDTO.builder()
-                            .id(btl.getClassV().getId())
-                            .name(btl.getClassV().getClassName())
-                            .build())
-                    .publisher(btl.getPublisher().stream().map(p -> {
-                        return GetUserResponse.builder()
-                                .id(p.getId())
-                                .userId(p.getUserId())
-                                .fullname(p.getFullname())
-                                .email(p.getEmail())
-                                .build();
-                    }).collect(Collectors.toList()))
-                    .build();
-
-            btldtos.add(btldto);
+        subjectEntityList.forEach(subjectEntity -> {
+            List<BTL> btlList = btlRepository.findAllBySubject(subjectEntity);
+            btlList.forEach(btl -> {
+                BTLDTO btldto = BTLDTO.builder()
+                        .id(btl.getId())
+                        .status(btl.getStatus())
+                        .name(btl.getName())
+                        .path(btl.getPath())
+                        .createdAt(btl.getCreatedAt())
+                        .subjectDTO(SubjectDTO.builder()
+                                .id(btl.getSubject().getId())
+                                .name(btl.getSubject().getName())
+                                .build())
+                        .publisher(btl.getPublisher().stream().map(p -> {
+                            return GetUserResponse.builder()
+                                    .id(p.getId())
+                                    .userId(p.getUserId())
+                                    .fullname(p.getFullname())
+                                    .email(p.getEmail())
+                                    .build();
+                        }).collect(Collectors.toList()))
+                        .subjectDTO(SubjectDTO.builder()
+                                .id(btl.getSubject().getId())
+                                .name(btl.getSubject().getName())
+                                .build())
+                        .build();
+                btldtos.add(btldto);
+            });
         });
+        return ResponseEntity.ok(btldtos);
+    }
+    @GetMapping("/getAllBySubject")
+    private ResponseEntity<?> getAllBySubject(@RequestParam Long classId) {
+        SubjectEntity subjectEntity = subjectRepository.findById(classId).orElse(null);
+        List<BTLDTO> btldtos = new ArrayList<>();
+            List<BTL> btlList = btlRepository.findAllBySubject(subjectEntity);
+            btlList.forEach(btl -> {
+                BTLDTO btldto = BTLDTO.builder()
+                        .id(btl.getId())
+                        .status(btl.getStatus())
+                        .name(btl.getName())
+                        .path(btl.getPath())
+                        .createdAt(btl.getCreatedAt())
+                        .subjectDTO(SubjectDTO.builder()
+                                .id(btl.getSubject().getId())
+                                .name(btl.getSubject().getName())
+                                .build())
+                        .publisher(btl.getPublisher().stream().map(p -> {
+                            return GetUserResponse.builder()
+                                    .id(p.getId())
+                                    .userId(p.getUserId())
+                                    .fullname(p.getFullname())
+                                    .email(p.getEmail())
+                                    .build();
+                        }).collect(Collectors.toList()))
+                        .subjectDTO(SubjectDTO.builder()
+                                .id(btl.getId())
+                                .name(btl.getName())
+                                .build())
+                        .build();
+                btldtos.add(btldto);
+            });
+
         return ResponseEntity.ok(btldtos);
     }
 
@@ -110,16 +153,16 @@ public class BTLController {
     }
 
     @GetMapping("/searchBTL")
-    private ResponseEntity<List<BTLDTO>> searchBTL(@RequestParam String name, @RequestParam Long classId) {
+    private ResponseEntity<List<BTLDTO>> searchBTL(@RequestParam String name, @RequestParam Long subjectId) {
         List<BTL> result;
 
-        if (name != null && classId != null) {
+        if (name != null && subjectId != null) {
 
-            result = btlRepository.searchByNameAndClassV(name, classVRepository.findById(classId).orElse(null));
+            result = btlRepository.searchByNameAndSubject(name, subjectRepository.findById(subjectId).orElse(null));
         } else if (name != null) {
-            result = btlRepository.searchByNameAndClassV(name, null);
-        } else if (classId != null) {
-            result = btlRepository.searchByNameAndClassV(null, classVRepository.findById(classId).orElse(null));
+            result = btlRepository.searchByNameAndSubject(name, null);
+        } else if (subjectId != null) {
+            result = btlRepository.searchByNameAndSubject(null, subjectRepository.findById(subjectId).orElse(null));
         } else {
             result = btlRepository.findAll();
         }
@@ -140,9 +183,9 @@ public class BTLController {
                                        .build();
                            }).collect(Collectors.toList()))
                            .path(dl.getPath())
-                           .classDTO(ClassDTO.builder()
-                                   .id(dl.getClassV().getId())
-                                   .name(dl.getClassV().getClassName())
+                           .subjectDTO(SubjectDTO.builder()
+                                   .id(dl.getSubject().getId())
+                                   .name(dl.getSubject().getName())
                                    .build())
                            .build();
                 })

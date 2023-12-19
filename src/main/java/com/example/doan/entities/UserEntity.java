@@ -39,6 +39,10 @@ public class UserEntity  implements UserDetails {
     @ManyToOne(cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     private Faculties faculty;
 
+
+    @OneToMany(mappedBy = "user")
+    private List<SubjectUserEntity> subjects;
+
     private int status;
 
     @ManyToMany(mappedBy = "publisher")

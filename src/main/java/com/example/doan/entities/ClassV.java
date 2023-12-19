@@ -24,7 +24,7 @@ public class ClassV {
     private List<ClassVUser> classVUsers;
 
     @OneToMany(cascade = {CascadeType.MERGE,CascadeType.PERSIST},mappedBy = "classV")
-    private List<BTL> btls;
+    private List<SubjectEntity> subjects;
 
     private int status;
 

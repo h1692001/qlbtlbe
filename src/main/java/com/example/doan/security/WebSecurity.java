@@ -76,6 +76,7 @@ public class WebSecurity {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowedOrigins(List.of("https://qlbtlfe.vercel.app"));
+//        corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setMaxAge(1800L);
         corsConfiguration.setAllowedMethods(List.of("GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"));

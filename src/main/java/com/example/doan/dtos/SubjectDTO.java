@@ -8,18 +8,21 @@ import java.util.List;
 
 @Data
 @Builder
-public class ClassDTO {
+public class SubjectDTO {
     private Long id;
+
     private String name;
-    private Date createdAt;
-    private MajorDto major;
-    private Long memberId;
-    private Long majorId;
-    private String role;
+    private List<BTLDTO> btls;
+    private String teacher;
     private GetUserResponse member;
+    private Long userId;
     private int isSubmit;
+    private ClassDTO classV;
+    private Long classId;
     private Date submittedAt;
-    private FacultyDTO faculty;
     private int status;
-    private List<SubjectDTO> subjects;
+    private String role;
+
+
+
 }

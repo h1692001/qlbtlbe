@@ -11,18 +11,21 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-public class ClassVUser {
+public class SubjectUserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
+
     private String role;
+    private int submit;
+    private Date submitedAt;
     private int status;
 
     @ManyToOne
     private UserEntity user;
 
     @ManyToOne
-    private ClassV classV;
+    private SubjectEntity subject;
 
 }

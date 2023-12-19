@@ -20,7 +20,6 @@ public class BTL {
     private Long id;
 
     private String path;
-
     private String status;
     private String name;
 
@@ -35,6 +34,6 @@ public class BTL {
     private Date createdAt;
 
     @ManyToOne
-    private ClassV classV;
+    private SubjectEntity subject;
 
 }

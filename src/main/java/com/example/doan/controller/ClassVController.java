@@ -2,19 +2,10 @@ package com.example.doan.controller;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.example.doan.dtos.ClassDTO;
-import com.example.doan.dtos.FacultyDTO;
-import com.example.doan.dtos.GetUserResponse;
-import com.example.doan.dtos.MajorDto;
-import com.example.doan.entities.ClassV;
-import com.example.doan.entities.ClassVUser;
-import com.example.doan.entities.MajorEntity;
-import com.example.doan.entities.UserEntity;
+import com.example.doan.dtos.*;
+import com.example.doan.entities.*;
 import com.example.doan.exception.ApiException;
-import com.example.doan.repository.ClassVRepository;
-import com.example.doan.repository.ClassVUserRepository;
-import com.example.doan.repository.MajorRepository;
-import com.example.doan.repository.UserRepository;
+import com.example.doan.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -26,10 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -51,6 +39,12 @@ public class ClassVController {
     @Autowired
     private ClassVUserRepository classVUserRepository;
 
+    @Autowired
+    private SubjectRepository subjectRepository;
+
+    @Autowired
+    private SubjectUserRepository subjectUserRepository;
+
     @GetMapping("/getAllAdmin")
     private ResponseEntity<?> getAllAdmin() {
         List<ClassV> classVList = classVRepository.findAll();
@@ -62,10 +56,21 @@ public class ClassVController {
                     .major(MajorDto.builder()
                             .id(classV.getMajor().getId())
                             .majorName(classV.getMajor().getName()).build())
+                    .faculty(FacultyDTO.builder()
+                            .id(classV.getMajor().getFaculties().getId())
+                            .name(classV.getMajor().getFaculties().getName())
+                            .build())
                     .status(classV.getStatus())
+                    .subjects(classV.getSubjects().stream().map(cl -> {
+                        return SubjectDTO.builder()
+                                .id(cl.getId())
+                                .name(cl.getName())
+                                .build();
+                    }).collect(Collectors.toList()))
                     .build();
         }).collect(Collectors.toList()));
     }
+
     @GetMapping
     private ResponseEntity<?> getAllClass() {
         List<ClassV> classVList = classVRepository.findAll();
@@ -142,6 +147,31 @@ public class ClassVController {
                     .build();
         }).collect(Collectors.toList()));
     }
+    @GetMapping("/getMembersStudentSubject")
+    private ResponseEntity<?> getMembersStudentSubject(@RequestParam Long classId) {
+        List<SubjectUserEntity> classVUsers = subjectUserRepository.findAllBySubjectStudent(classId, "STUDENT");
+        return ResponseEntity.ok(classVUsers.stream().map(classVUser -> {
+            return ClassDTO.builder()
+                    .member(GetUserResponse.builder()
+                            .id(classVUser.getUser().getId())
+                            .role(classVUser.getUser().getRole())
+                            .userId(classVUser.getUser().getUserId())
+                            .fullname(classVUser.getUser().getFullname())
+                            .email(classVUser.getUser().getEmail())
+                            .avatar(classVUser.getUser().getAvatar())
+                            .major(MajorDto.builder()
+                                    .id(classVUser.getUser().getMajor().getId())
+                                    .majorName(classVUser.getUser().getMajor().getName()).build())
+                            .faculty(FacultyDTO.builder()
+                                    .id(classVUser.getUser().getMajor().getFaculties().getId())
+                                    .name(classVUser.getUser().getMajor().getFaculties().getName())
+                                    .build())
+                            .status(classVUser.getUser().getStatus())
+                            .build())
+                    .role(classVUser.getRole())
+                    .build();
+        }).collect(Collectors.toList()));
+    }
 
     @PostMapping
     private ResponseEntity<?> createClass(@RequestBody ClassDTO classDTO) throws Exception {
@@ -177,8 +207,6 @@ public class ClassVController {
         classVRepository.save(classV1);
 
         return ResponseEntity.ok("Success");
-
-
     }
 
     @PostMapping("/addMember")
@@ -187,8 +215,8 @@ public class ClassVController {
         if (classV.isEmpty()) {
             throw new ApiException("Can't find class");
         }
-        if(classV.get().getStatus()==1){
-            throw new ApiException(HttpStatus.BAD_REQUEST,"Disable class");
+        if (classV.get().getStatus() == 1) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Disable class");
         }
 
         Optional<UserEntity> user = userRepository.findById(classDTO.getMemberId());
@@ -196,12 +224,22 @@ public class ClassVController {
         if (check != null) {
             throw new ApiException("Existed member");
         }
-
         ClassVUser classVUser = ClassVUser.builder()
                 .role(classDTO.getRole())
                 .user(user.get())
                 .classV(classV.get())
                 .build();
+        List<SubjectEntity> subjectEntityList = subjectRepository.findAllByClassV(classV.get());
+        subjectEntityList.forEach(st -> {
+            SubjectUserEntity subjectUserEntity = SubjectUserEntity.builder()
+                    .subject(st)
+                    .role("STUDENT")
+                    .user(user.get())
+                    .build();
+            st.getMembers().add(subjectUserEntity);
+            user.get().getSubjects().add(subjectUserEntity);
+            subjectUserRepository.save(subjectUserEntity);
+        });
         user.get().getClassVUsers().add(classVUser);
         classV.get().getClassVUsers().add(classVUser);
         classVUserRepository.save(classVUser);
@@ -212,10 +250,38 @@ public class ClassVController {
 
     @GetMapping("/checknopbai")
     private ResponseEntity<?> checknopbai(@RequestParam Long classId) {
-        Optional<ClassV> classV = classVRepository.findById(classId);
-        List<ClassVUser> classVUsers = classVUserRepository.findAllByClassV(classV.get());
-        return ResponseEntity.ok(classVUsers.stream().map(classVUser -> {
-            return ClassDTO.builder()
+        ClassV classV = classVRepository.findById(classId).orElse(null);
+        List<SubjectEntity> subjectEntityList = subjectRepository.findAllByClassV(classV);
+        List<SubjectDTO> subjectDTOS = new ArrayList<>();
+        subjectEntityList.forEach(sn -> {
+            List<SubjectUserEntity> classVUsers = subjectUserRepository.findAllBySubject(sn);
+            classVUsers.forEach(classVUser -> {
+                subjectDTOS.add(SubjectDTO.builder()
+                        .member(GetUserResponse.builder()
+                                .id(classVUser.getUser().getId())
+                                .userId(classVUser.getUser().getUserId())
+                                .fullname(classVUser.getUser().getFullname())
+                                .email(classVUser.getUser().getEmail())
+                                .build())
+                        .role(classVUser.getRole())
+                        .isSubmit(classVUser.getSubmit())
+                        .submittedAt(classVUser.getSubmitedAt())
+                        .name(classVUser.getSubject().getName())
+
+                        .build());
+            });
+        });
+        return ResponseEntity.ok(subjectDTOS);
+
+    }
+
+    @GetMapping("/checknopbaiBySubject")
+    private ResponseEntity<?> checknopbaiBySubject(@RequestParam Long classId) {
+        SubjectEntity subjectEntity = subjectRepository.findById(classId).orElse(null);
+        List<SubjectDTO> subjectDTOS = new ArrayList<>();
+        List<SubjectUserEntity> classVUsers = subjectUserRepository.findAllBySubject(subjectEntity);
+        classVUsers.forEach(classVUser -> {
+            subjectDTOS.add(SubjectDTO.builder()
                     .member(GetUserResponse.builder()
                             .id(classVUser.getUser().getId())
                             .userId(classVUser.getUser().getUserId())
@@ -225,21 +291,25 @@ public class ClassVController {
                     .role(classVUser.getRole())
                     .isSubmit(classVUser.getSubmit())
                     .submittedAt(classVUser.getSubmitedAt())
-                    .build();
-        }).collect(Collectors.toList()));
+                            .name(classVUser.getSubject().getName())
+                    .build());
+        });
+
+        return ResponseEntity.ok(subjectDTOS);
 
     }
 
     @GetMapping("/disableClass")
-    private ResponseEntity<?> disableClass(@RequestParam Long classId){
-        Optional<ClassV> classV=classVRepository.findById(classId);
+    private ResponseEntity<?> disableClass(@RequestParam Long classId) {
+        Optional<ClassV> classV = classVRepository.findById(classId);
         classV.get().setStatus(1);
         classVRepository.save(classV.get());
         return ResponseEntity.ok("ok");
     }
+
     @GetMapping("/enableClass")
-    private ResponseEntity<?> enableClass(@RequestParam Long classId){
-        Optional<ClassV> classV=classVRepository.findById(classId);
+    private ResponseEntity<?> enableClass(@RequestParam Long classId) {
+        Optional<ClassV> classV = classVRepository.findById(classId);
         classV.get().setStatus(0);
         classVRepository.save(classV.get());
         return ResponseEntity.ok("ok");

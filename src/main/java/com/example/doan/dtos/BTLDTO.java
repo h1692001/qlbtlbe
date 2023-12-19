@@ -16,5 +16,6 @@ public class BTLDTO {
     private String status;
     private Date createdAt;
     private List<GetUserResponse> publisher;
+    private SubjectDTO subjectDTO;
     private ClassDTO classDTO;
 }
