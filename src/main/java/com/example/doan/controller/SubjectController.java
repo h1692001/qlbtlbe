@@ -69,6 +69,17 @@ public class SubjectController {
                     .build();
         }).collect(Collectors.toList()));
     }
+
+    @GetMapping("/getAll")
+    public ResponseEntity<?> getAll(){
+        List<SubjectEntity> subjectEntityList=subjectRepository.findAll();
+        return ResponseEntity.ok(subjectEntityList.stream().map(sb->{
+            return SubjectDTO.builder()
+                    .id(sb.getId())
+                    .name(sb.getName())
+                    .build();
+        }).collect(Collectors.toList()));
+    }
     @PostMapping
     public  ResponseEntity<?> addSubject(@RequestBody SubjectDTO subjectDTO){
         ClassV classV=classVRepository.findById(subjectDTO.getClassId()).orElse(null);

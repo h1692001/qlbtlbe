@@ -158,9 +158,9 @@ public class BTLController {
 
         if (name != null && subjectId != -1) {
             result = btlRepository.searchByNameAndSubject(name, subjectRepository.findById(subjectId).orElse(null));
-        } else if (name != null) {
+        } else if (name != null && subjectId==-1) {
             result = btlRepository.searchByNameAndSubject(name, null);
-        } else if (subjectId != null) {
+        } else if (subjectId != -1&& name==null) {
             result = btlRepository.searchByNameAndSubject(null, subjectRepository.findById(subjectId).orElse(null));
         } else {
             result = btlRepository.findAll();
