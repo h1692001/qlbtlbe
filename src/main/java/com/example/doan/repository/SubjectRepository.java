@@ -13,4 +13,6 @@ public interface SubjectRepository extends JpaRepository<SubjectEntity,Long> {
     List<SubjectEntity> findAllByClassV(ClassV classV);
 
     Optional<SubjectEntity> findByName(String name);
+
+    Optional<SubjectEntity> findByNameAndClassV(String name, ClassV classV);
 }

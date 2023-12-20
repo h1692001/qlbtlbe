@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -63,18 +64,18 @@ public class SubjectController {
         List<SubjectUserEntity> subjectUserEntities=subjectUserRepository.findAllByUser(user);
         return ResponseEntity.ok(subjectUserEntities.stream().map(sb->{
             return SubjectDTO.builder()
-                    .id(sb.getId())
+                    .id(sb.getSubject().getId())
                     .name(sb.getSubject().getName())
                     .build();
         }).collect(Collectors.toList()));
     }
     @PostMapping
     public  ResponseEntity<?> addSubject(@RequestBody SubjectDTO subjectDTO){
-        SubjectEntity check=subjectRepository.findByName(subjectDTO.getName()).orElse(null);
+        ClassV classV=classVRepository.findById(subjectDTO.getClassId()).orElse(null);
+        SubjectEntity check=subjectRepository.findByNameAndClassV(subjectDTO.getName(),classV).orElse(null);
         if(check!=null){
             throw new ApiException(HttpStatus.BAD_REQUEST,"Existed subject");
         }
-        ClassV classV=classVRepository.findById(subjectDTO.getClassId()).orElse(null);
          SubjectEntity subject=SubjectEntity.builder()
                  .name(subjectDTO.getName())
                  .classV(classV)
@@ -102,16 +103,25 @@ public class SubjectController {
     public ResponseEntity<?> addTeacher(@RequestBody SubjectDTO subjectDTO){
         UserEntity user=userRepository.findById(subjectDTO.getUserId()).orElse(null);
         SubjectEntity subject=subjectRepository.findById(subjectDTO.getId()).orElse(null);
-        SubjectUserEntity subjectUserEntity=SubjectUserEntity.builder()
-                .user(user)
-                .subject(subject)
-                .role("TEACHER")
-                .build();
-        subjectUserRepository.save(subjectUserEntity);
-        user.getSubjects().add(subjectUserEntity);
-        subject.getMembers().add(subjectUserEntity);
-        userRepository.save(user);
-        subjectRepository.save(subject);
+        SubjectUserEntity check=subjectUserRepository.findTeacherInSubject(subjectDTO.getId());
+        if(check!=null){
+            check.setUser(user);
+            user.getSubjects().add(check);
+            subjectUserRepository.save(check);
+            userRepository.save(user);
+        }else{
+            SubjectUserEntity subjectUserEntity=SubjectUserEntity.builder()
+                    .user(user)
+                    .subject(subject)
+                    .role("TEACHER")
+                    .build();
+            subjectUserRepository.save(subjectUserEntity);
+            user.getSubjects().add(subjectUserEntity);
+            subject.getMembers().add(subjectUserEntity);
+            userRepository.save(user);
+            subjectRepository.save(subject);
+        }
+
         return ResponseEntity.ok("");
 
     }

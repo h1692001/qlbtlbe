@@ -156,8 +156,7 @@ public class BTLController {
     private ResponseEntity<List<BTLDTO>> searchBTL(@RequestParam String name, @RequestParam Long subjectId) {
         List<BTL> result;
 
-        if (name != null && subjectId != null) {
-
+        if (name != null && subjectId != -1) {
             result = btlRepository.searchByNameAndSubject(name, subjectRepository.findById(subjectId).orElse(null));
         } else if (name != null) {
             result = btlRepository.searchByNameAndSubject(name, null);

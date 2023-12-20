@@ -91,7 +91,6 @@ public class ClassVController {
     @GetMapping("/getClassByUser")
     private ResponseEntity<?> getClassByUser(@RequestParam Long userId) {
         Optional<UserEntity> user = userRepository.findById(userId);
-
         List<ClassVUser> classVList = classVUserRepository.findAllByUser(user.get());
         return ResponseEntity.ok(classVList.stream().map(classV -> {
             if (classV.getStatus() != 1)
