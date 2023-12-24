@@ -18,6 +18,8 @@ public class SubjectEntity {
     private Long id;
 
     private String name;
+    private String subjectType;
+    private String subjectId;
 
     @OneToMany(cascade = {CascadeType.MERGE,CascadeType.PERSIST},mappedBy = "subject")
     private List<BTL> btls;
@@ -27,4 +29,7 @@ public class SubjectEntity {
 
     @OneToMany(cascade = {CascadeType.MERGE,CascadeType.PERSIST},mappedBy = "subject")
     private List<SubjectUserEntity> members;
+
+    @OneToMany(cascade = {CascadeType.MERGE,CascadeType.PERSIST},mappedBy = "subject")
+    private List<GroupEntity> groups;
 }

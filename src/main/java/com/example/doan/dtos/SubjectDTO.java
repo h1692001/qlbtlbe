@@ -20,9 +20,11 @@ public class SubjectDTO {
     private ClassDTO classV;
     private Long classId;
     private Date submittedAt;
+    private List<GroupDTO> memberGroup;
     private int status;
     private String role;
-
-
-
+    private List<Long> userIds;
+    private String subjectType;
+    private String subjectId;
+    private List<GroupDTO> groups;
 }

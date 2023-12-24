@@ -3,21 +3,18 @@ package com.example.doan.controller;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.doan.dtos.BTLDTO;
-import com.example.doan.dtos.ClassDTO;
 import com.example.doan.dtos.GetUserResponse;
 import com.example.doan.dtos.SubjectDTO;
 import com.example.doan.entities.*;
 import com.example.doan.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,26 +31,45 @@ public class BTLController {
     private final LogRepository logRepository;
     private final SubjectRepository subjectRepository;
     private final SubjectUserRepository subjectUserRepository;
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
 
     @PostMapping
-    private ResponseEntity<?> uploadBTL(@RequestParam MultipartFile file, @ModelAttribute("uploader") List<Long> uploader, @ModelAttribute("classV") Long subject, @ModelAttribute("name") String name) throws IOException {
+    private ResponseEntity<?> uploadBTL(@RequestParam MultipartFile file, @ModelAttribute("uploader") Long uploader, @ModelAttribute("classV") Long subject, @ModelAttribute("name") String name) throws IOException {
         Optional<SubjectEntity> classV1 = subjectRepository.findById(subject);
-        List<UserEntity> user = userRepository.findByIdIn(uploader);
+        UserEntity user = userRepository.findById(uploader).orElse(null);
         String publicId = classV1.get().getName() + "/" + file.getOriginalFilename();
 
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap("public_id", publicId, "resource_type", "raw"));
-        user.forEach(userEntity -> {
-            SubjectUserEntity classVUser = subjectUserRepository.findByUserAndSubject(userEntity, classV1.get());
+        if(classV1.get().getSubjectType().equals("person")){
+            SubjectUserEntity classVUser = subjectUserRepository.findByUserAndSubject(user, classV1.get());
             classVUser.setSubmit(1);
             classVUser.setSubmitedAt(new Date());
             subjectUserRepository.save(classVUser);
-        });
+        }else{
+            List<GroupEntity> groups=groupRepository.findAllBySubject(classV1.get());
+            groups.forEach(group->{
+                AtomicBoolean isTrue= new AtomicBoolean(false);
+                group.getMembers().forEach(groupMember -> {
+                    if(groupMember.getUser().getId()==user.getId())
+                        isTrue.set(true);
+                });
+                if(isTrue.get()){
+                    group.setSubmittedAt(new Date());
+                    group.setIsSubmitted(1);
+                    groupRepository.save(group);
+                }
+
+            });
+
+        }
+
         String fileUrl = (String) uploadResult.get("url");
         BTL btl = BTL.builder()
                 .subject(classV1.get())
                 .createdAt(new Date())
-                .publisher(user)
+                .publisher(Collections.singletonList(user))
                 .name(name)
                 .path(fileUrl)
                 .status("PENDING")

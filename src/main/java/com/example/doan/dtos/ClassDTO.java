@@ -22,4 +22,6 @@ public class ClassDTO {
     private FacultyDTO faculty;
     private int status;
     private List<SubjectDTO> subjects;
+    private String classId;
+    private String classType;
 }

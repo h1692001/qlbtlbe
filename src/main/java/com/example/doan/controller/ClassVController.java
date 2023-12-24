@@ -6,6 +6,7 @@ import com.example.doan.dtos.*;
 import com.example.doan.entities.*;
 import com.example.doan.exception.ApiException;
 import com.example.doan.repository.*;
+import org.apache.catalina.Group;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -44,6 +45,12 @@ public class ClassVController {
 
     @Autowired
     private SubjectUserRepository subjectUserRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
+
+    @Autowired
+    private GroupMemberRepository groupMemberRepository;
 
     @GetMapping("/getAllAdmin")
     private ResponseEntity<?> getAllAdmin() {
@@ -146,6 +153,7 @@ public class ClassVController {
                     .build();
         }).collect(Collectors.toList()));
     }
+
     @GetMapping("/getMembersStudentSubject")
     private ResponseEntity<?> getMembersStudentSubject(@RequestParam Long classId) {
         List<SubjectUserEntity> classVUsers = subjectUserRepository.findAllBySubjectStudent(classId, "STUDENT");
@@ -278,21 +286,40 @@ public class ClassVController {
     private ResponseEntity<?> checknopbaiBySubject(@RequestParam Long classId) {
         SubjectEntity subjectEntity = subjectRepository.findById(classId).orElse(null);
         List<SubjectDTO> subjectDTOS = new ArrayList<>();
-        List<SubjectUserEntity> classVUsers = subjectUserRepository.findAllBySubject(subjectEntity);
-        classVUsers.forEach(classVUser -> {
-            subjectDTOS.add(SubjectDTO.builder()
-                    .member(GetUserResponse.builder()
-                            .id(classVUser.getUser().getId())
-                            .userId(classVUser.getUser().getUserId())
-                            .fullname(classVUser.getUser().getFullname())
-                            .email(classVUser.getUser().getEmail())
-                            .build())
-                    .role(classVUser.getRole())
-                    .isSubmit(classVUser.getSubmit())
-                    .submittedAt(classVUser.getSubmitedAt())
-                            .name(classVUser.getSubject().getName())
-                    .build());
-        });
+        if (subjectEntity.getSubjectType().equals("person")) {
+            List<SubjectUserEntity> classVUsers = subjectUserRepository.findAllBySubject(subjectEntity);
+            classVUsers.forEach(classVUser -> {
+                subjectDTOS.add(SubjectDTO.builder()
+                        .member(GetUserResponse.builder()
+                                .id(classVUser.getUser().getId())
+                                .userId(classVUser.getUser().getUserId())
+                                .fullname(classVUser.getUser().getFullname())
+                                .email(classVUser.getUser().getEmail())
+                                .build())
+                        .role(classVUser.getRole())
+                        .isSubmit(classVUser.getSubmit())
+                        .submittedAt(classVUser.getSubmitedAt())
+                        .name(classVUser.getSubject().getName())
+                        .build());
+            });
+        } else {
+            List<GroupEntity> groups = groupRepository.findALlBySubject(subjectEntity);
+            groups.stream().forEach(groupEntity -> {
+                subjectDTOS.add(SubjectDTO.builder()
+                        .isSubmit(groupEntity.getIsSubmitted())
+                        .name(groupEntity.getName())
+                        .submittedAt(groupEntity.getSubmittedAt())
+                        .memberGroup(groupEntity.getMembers().stream().map(gr -> {
+                            return GroupDTO.builder()
+                                    .member(GetUserResponse.builder()
+                                            .fullname(gr.getUser().getFullname())
+                                            .userId(gr.getUser().getUserId())
+                                            .build())
+                                    .build();
+                        }).collect(Collectors.toList()))
+                        .build());
+            });
+        }
 
         return ResponseEntity.ok(subjectDTOS);
 

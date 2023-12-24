@@ -20,6 +20,7 @@ public class ClassV {
 
     private String className;
 
+
     @OneToMany(cascade = {CascadeType.MERGE,CascadeType.PERSIST},mappedBy = "classV")
     private List<ClassVUser> classVUsers;
 

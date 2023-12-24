@@ -51,6 +51,9 @@ public class UserEntity  implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @OneToMany(mappedBy = "user",cascade = {CascadeType.MERGE,CascadeType.MERGE})
+    private List<GroupMember> groupMembers;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role.getAuthorities();
