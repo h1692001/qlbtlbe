@@ -70,6 +70,7 @@ public class SubjectController {
                     .id(sb.getSubject().getId())
                     .name(sb.getSubject().getName())
                     .subjectType(sb.getSubject().getSubjectType())
+                    .role(sb.getSubject().getClassV().getClassName())
                     .build();
         }).collect(Collectors.toList()));
     }
